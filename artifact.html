@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Artifact: CS 360 Inventory Management App | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html" aria-current="page">Artifact</a></li><li><a href="software-design.html">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html">Databases</a></li><li><a href="outcomes.html">Outcomes</a></li><li><a href="code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+
+<p class="eyebrow">Artifact &middot; All three enhancement categories</p>
+<h1>CS 360 Inventory Management Application</h1>
+<p class="lede">An Android app in Java with a local SQLite database. Users register, log in, and add, view, edit, and delete inventory items. Originally built in CS 360, Mobile Architecture and Programming (Spring 2026); enhanced in CS 499.</p>
+
+<div class="note"><strong>One artifact, three categories.</strong> The course guidelines allow a single artifact to be enhanced in all three categories. This app is the artifact for <a href="software-design.html">software design and engineering</a>, <a href="algorithms.html">algorithms and data structures</a>, and <a href="databases.html">databases</a>.</div>
+
+<h2>At a glance</h2>
+<div class="table-scroll"><table>
+<thead><tr><th scope="col"></th><th scope="col">Original (CS 360)</th><th scope="col">Enhanced (CS 499)</th></tr></thead>
+<tbody>
+<tr><th scope="row">Structure</th><td>Two activities with UI, SQL, and cursor logic mixed together</td><td>UI, logic, and data layers; model and adapter classes</td></tr>
+<tr><th scope="row">Features</th><td>Add, list, delete</td><td>Add, list, <strong>edit</strong>, delete with confirmation, empty state, out-of-stock label</td></tr>
+<tr><th scope="row">Delete</th><td>Deleted by list position + 1 (could remove the wrong item)</td><td>Deletes by the item's real database ID</td></tr>
+<tr><th scope="row">Input</th><td>No validation; empty quantity crashed the app</td><td>Every field validated with an error shown on the field</td></tr>
+<tr><th scope="row">Passwords</th><td>Plain text, unmasked field</td><td>Salted PBKDF2-HMAC-SHA256, 120,000 iterations, masked field</td></tr>
+<tr><th scope="row">Database</th><td>Version 1, no constraints, empty <code>onUpgrade</code></td><td>Version 2 with constraints and index, automatic v1 to v2 migration</td></tr>
+<tr><th scope="row">Tests</th><td>Template test only</td><td>31 JUnit unit tests, all passing</td></tr>
+<tr><th scope="row">Min. Android</th><td>API 24</td><td>API 26 (needed for PBKDF2 and <code>java.util.Base64</code>)</td></tr>
+</tbody></table></div>
+
+<h2>Downloads</h2>
+<div class="btns">
+<a class="btn primary" href="downloads/CS499_Final_Artifact_Narrative_Rajin_Ahmed.docx" download>Artifact Narrative (Word)</a>
+<a class="btn" href="downloads/CS360_Inventory_App_Original.zip" download>Original Source Code (ZIP)</a>
+<a class="btn" href="downloads/CS360_Inventory_App_Enhanced.zip" download>Enhanced Source Code (ZIP)</a>
+<a class="btn" href="downloads/CS499_Complete_Artifact_Package.zip" download>Complete Artifact Package with Documentation (ZIP)</a>
+<a class="btn" href="downloads/CS499_Milestone2_Narrative_As_Submitted_Rajin_Ahmed.docx" download>Milestone Two Narrative, as Submitted (Word)</a>
+</div>
+<p>Documentation: <a href="enhancement-notes.html">enhancement notes</a> (problems found, architecture, schema, pseudocode, test plan) and <a href="artifact-readme.html">artifact README</a> (how to run the app and tests).</p>
+
+<h2 id="source">Source code</h2>
+<p>Read any file in the browser. The original files are unchanged from CS 360; only generated build output and a machine-specific <code>local.properties</code> file were removed.</p>
+<h3>Original (CS 360)</h3>
+<div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Purpose</th><th scope="col">Lines</th></tr></thead><tbody><tr><td><a href="code/original-MainActivity-java.html">MainActivity.java</a></td><td>Login and registration screen; SQL called directly from the UI.</td><td>55</td></tr><tr><td><a href="code/original-InventoryActivity-java.html">InventoryActivity.java</a></td><td>Inventory screen; stores items as display strings and deletes by list position.</td><td>62</td></tr><tr><td><a href="code/original-DatabaseHelper-java.html">DatabaseHelper.java</a></td><td>Version 1 schema; plain-text passwords; empty onUpgrade.</td><td>64</td></tr></tbody></table></div>
+<h3>Enhanced (CS 499)</h3>
+<div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Purpose</th><th scope="col">Lines</th></tr></thead><tbody><tr><td><a href="code/enhanced-MainActivity-java.html">MainActivity.java</a></td><td>Validated login and registration; hashed authentication; generic login error.</td><td>105</td></tr><tr><td><a href="code/enhanced-InventoryActivity-java.html">InventoryActivity.java</a></td><td>Validated add, edit dialog, delete confirmation, empty state.</td><td>162</td></tr><tr><td><a href="code/enhanced-DatabaseHelper-java.html">DatabaseHelper.java</a></td><td>Version 2 schema, v1 to v2 migration, ID-based CRUD, timing logs.</td><td>253</td></tr><tr><td><a href="code/enhanced-InventoryItem-java.html">InventoryItem.java</a></td><td>New model class that keeps each record&#x27;s real database ID.</td><td>37</td></tr><tr><td><a href="code/enhanced-InventoryAdapter-java.html">InventoryAdapter.java</a></td><td>New adapter that displays InventoryItem objects.</td><td>60</td></tr><tr><td><a href="code/enhanced-ValidationUtils-java.html">ValidationUtils.java</a></td><td>New: every input rule in one testable class.</td><td>103</td></tr><tr><td><a href="code/enhanced-PasswordHasher-java.html">PasswordHasher.java</a></td><td>New: salted PBKDF2 hashing with constant-time verification.</td><td>66</td></tr><tr><td><a href="code/enhanced-ValidationUtilsTest-java.html">ValidationUtilsTest.java</a></td><td>New JUnit tests for the validation rules.</td><td>46</td></tr><tr><td><a href="code/enhanced-PasswordHasherTest-java.html">PasswordHasherTest.java</a></td><td>New JUnit tests for password hashing.</td><td>50</td></tr></tbody></table></div>
+
+<h2>How to run</h2>
+<ol>
+<li>Download the enhanced source ZIP and open the <code>MyDatabaseApp_Enhanced</code> folder in Android Studio (File &rarr; Open). Let Gradle sync.</li>
+<li>Run on an emulator or device with Android 8.0 (API 26) or newer.</li>
+<li>Run the unit tests: right-click <code>app/src/test</code> &rarr; Run Tests, or run <code>gradlew test</code>.</li>
+<li>Database timings appear in Logcat under the tag <code>CS499_DB_PERF</code>.</li>
+</ol>
+
+<h2 id="narrative">Artifact Narrative</h2>
+<div class="self-assessment">
+<h3 id="artifact-description">1. Artifact Description</h3>
+<p>The artifact for my ePortfolio is my Inventory Management
+Application, which I originally built in CS 360, Mobile Architecture and
+Programming, in Spring 2026. It is an Android application written in
+Java that stores data in a local SQLite database. Users can register an
+account, log in, and manage a list of inventory items. The original
+version could add items, list them, and delete them with a
+long-press.</p>
+<p>I enhanced this application in Milestone Two of CS 499. The course
+guidelines allow a single artifact to represent all three enhancement
+categories, and this enhancement changed the application at every layer:
+its design, its core logic and data structures, and its database. This
+narrative explains the work in each category. The original source code,
+the enhanced source code, a README, and detailed enhancement notes are
+included with the artifact.</p>
+<h3 id="justification-for-inclusion">2. Justification for Inclusion</h3>
+<p>I chose this project because it touches most of what a real
+application needs: a user interface, user authentication, persistent
+storage, and create, read, update, and delete operations. When I
+reviewed the code for this course, I also found real weaknesses,
+including a delete bug, plain-text passwords, a crash on empty input,
+and no database upgrade path. That made it a strong artifact for showing
+that I can take working code, evaluate it critically, and improve it,
+which is much of what professional developers do. My Module One plan
+named three goals: improve the user experience, reorganize the code for
+maintainability, and add useful functionality. The enhancements below
+follow those goals.</p>
+<h4 id="software-design-and-engineering">Software Design and
+Engineering</h4>
+<ul>
+<li><p><strong>Layered architecture.</strong> In the original, both
+activities did everything: read input, build display strings, run
+database calls, and read cursors. I separated the application into
+layers. An InventoryItem model represents one record, an
+InventoryAdapter handles display, ValidationUtils holds every input
+rule, PasswordHasher handles password security, and DatabaseHelper is
+the only class that contains SQL.</p></li>
+<li><p><strong>Testability.</strong> ValidationUtils and PasswordHasher
+have no Android dependencies, so I could write plain JUnit tests for
+them. I added 31 unit tests to replace the default template test, and
+all 31 pass with JUnit 4.13.2.</p></li>
+<li><p><strong>New functionality.</strong> Tapping an item now opens an
+edit dialog prefilled with its name and quantity, and the dialog stays
+open with an error message if the input is invalid. I also added a
+delete confirmation, an out-of-stock label, on-screen instructions, and
+an empty-list message.</p></li>
+<li><p><strong>Maintainability.</strong> All user-facing text moved from
+hard-coded strings into strings.xml, and every database cursor is now
+closed, which fixes a resource leak.</p></li>
+</ul>
+<h4 id="algorithms-and-data-structures">Algorithms and Data
+Structures</h4>
+<ul>
+<li><p><strong>Fixing a bug at the data-structure level.</strong> The
+original deleted items using the list position plus one as the database
+ID. Once any item was deleted, IDs had gaps, so a long-press could
+delete a different item or nothing at all. The cause was a
+data-structure decision: the list stored display strings and discarded
+each record's ID. I replaced that list of strings with a list of
+InventoryItem objects that keep their real IDs, and both update and
+delete now target the row by ID.</p></li>
+<li><p><strong>Validation logic.</strong> Each validation method checks
+its rules in a fixed order, such as required, then length, then allowed
+characters, and returns a specific message for the first rule that
+fails. Invalid data is stopped before it reaches the database, and the
+user sees exactly which field to correct. The original crashed with a
+NumberFormatException on an empty or non-numeric quantity.</p></li>
+<li><p><strong>Algorithm selection and trade-offs.</strong> I chose
+PBKDF2 with HMAC-SHA256, a 16-byte random salt per user, and 120,000
+iterations. The iteration count deliberately makes each login slower,
+because the same cost makes stolen hashes expensive to crack. Hashes are
+compared in constant time so the comparison does not leak timing
+information. I documented this speed-versus-security trade-off and added
+timing logs so its cost can be measured.</p></li>
+<li><p><strong>Pseudocode.</strong> I documented registration, login,
+and the add, update, and delete workflows as pseudocode, which is
+included in the enhancement notes.</p></li>
+</ul>
+<h4 id="databases">Databases</h4>
+<ul>
+<li><p><strong>Schema version 2 with constraints.</strong> Usernames are
+now required and unique without regard to case, item names are required,
+and quantity cannot be negative. The database enforces these rules
+itself, so invalid data is rejected even if a future screen forgets to
+validate it. Passwords are stored as a hash and salt instead of plain
+text.</p></li>
+<li><p><strong>Migration.</strong> The original onUpgrade method was
+empty, so any schema change would have broken existing installations. I
+wrote a version 1 to version 2 migration that hashes existing passwords,
+drops blank accounts, keeps the first account when usernames are
+duplicated, and repairs invalid item rows while keeping their original
+IDs. I tested the migration SQL against deliberately messy version 1
+data, and the new constraints rejected invalid inserts.</p></li>
+<li><p><strong>Query design.</strong> I added an index on item name that
+matches the case-insensitive ordering of the item list, kept every query
+parameterized (the original already passed user input as selection
+arguments, and every new query follows the same pattern), and made
+update and delete report whether exactly one row changed.</p></li>
+<li><p><strong>Measurement.</strong> In response to my Module One
+feedback, every database operation logs its elapsed time to Logcat under
+the tag CS499_DB_PERF, and the enhancement notes include a table for
+recording averages. The logging is implemented, but the averages have
+not yet been recorded, so this narrative does not report measured
+performance results.</p></li>
+</ul>
+<p>To support PBKDF2 and the standard Base64 encoder, I raised the
+minimum Android version from API 24 to API 26 (Android 8.0). This was a
+deliberate trade-off: a small number of very old devices lose support in
+exchange for a standard, secure hashing algorithm.</p>
+<h3 id="reflection-on-the-enhancement-process">3. Reflection on the
+Enhancement Process</h3>
+<p>The biggest thing I learned is that reading old code critically is a
+separate skill from writing code that works. When I wrote this app in CS
+360, it passed my own testing, so I assumed it was correct. Looking at
+it again, I found a delete bug that only shows up after an item has been
+removed, because the list position and the database ID stop lining up.
+It was a design problem, not a typo. I had thrown away the ID when I
+turned each record into a display string. Fixing it meant changing how
+data moves through the app, which is why I added the InventoryItem model
+instead of patching one line.</p>
+<p>Another lesson was that changing a database is more than changing the
+CREATE TABLE statement. Because the original onUpgrade method was empty,
+anyone who already had the app installed would have kept the old schema.
+Writing the migration made me think about the bad data the old version
+allowed, such as blank names, duplicate usernames, and negative
+quantities, and decide what should happen to each.</p>
+<p>The main challenge was balancing security against compatibility and
+speed. Secure password hashing required a higher minimum Android version
+and is expected to make login noticeably slower than other operations. I
+decided both costs were acceptable and documented why, so the decision
+can be reviewed rather than hidden. One known limitation remains:
+password hashing currently runs on the user-interface thread, and moving
+it to a background thread is the next improvement I would make. The
+manual emulator test cases in my enhancement notes are written but their
+results have not yet been recorded, so I report only the automated unit
+test results here.</p>
+<h3 id="feedback-incorporated">4. Feedback Incorporated</h3>
+<p>My Module One feedback asked for exact architecture changes,
+performance measurements, the database schema, test cases, pseudocode or
+a flowchart, and a mapping to course outcomes. I addressed each item:
+the enhancement notes include a before-and-after architecture diagram,
+both schema versions, pseudocode, unit and manual test cases, and an
+outcome mapping, and the code now logs the elapsed time of each database
+operation. The timing logs make performance measurable, but the measured
+averages are still to be recorded. In my status checkpoint I also asked
+my instructor for feedback on two decisions, raising the minimum Android
+version and my approach to migrating existing user data, because those
+were the trade-offs I was least certain about.</p>
+<h3 id="course-outcomes">5. Course Outcomes</h3>
+<p>In Module One I planned for this artifact to demonstrate the software
+engineering outcome. It does, and the enhancement also demonstrates the
+security outcome, which I had not originally planned for it. Because I
+am using one artifact for all three categories, the table below states
+which outcomes are fully met, which are partially met, and what was not
+addressed.</p>
+<div class="table-scroll"><table>
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 16%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Program outcome</strong></th>
+<th><strong>Status</strong></th>
+<th><strong>Evidence in this artifact</strong></th>
+</tr>
+<tr class="odd">
+<th>1. Collaborative environments that support organizational
+decision-making</th>
+<th>Partially met</th>
+<th>Module One instructor feedback incorporated (timing logs, test plan,
+unit tests); targeted feedback requested on two design trade-offs;
+README and enhancement notes written so another developer can run and
+test the project. Gap: after discussing the requirement with my
+instructor, I proceeded without recording the code review video.</th>
+</tr>
+<tr class="header">
+<th>2. Professional-quality oral, written, and visual
+communications</th>
+<th>Met (written and visual)</th>
+<th>This narrative, the README, enhancement notes with schema,
+pseudocode, architecture diagram, and test plan, explanatory code
+comments, and the ePortfolio pages. Gap: oral communication is not
+demonstrated because the code review video was not recorded.</th>
+</tr>
+<tr class="odd">
+<th>3. Algorithmic principles, computer science practices, and design
+trade-offs</th>
+<th>Partially met</th>
+<th>Data-structure redesign that fixed the delete bug at its source;
+ordered validation logic; deterministic migration rules; pseudocode for
+each workflow; documented PBKDF2 speed-versus-security trade-off; index
+supporting the sorted item list. Gap: no dedicated algorithm-efficiency
+enhancement with measured before-and-after results.</th>
+</tr>
+<tr class="header">
+<th>4. Well-founded techniques, skills, and tools that deliver
+value</th>
+<th>Met</th>
+<th>Layered architecture, model and adapter pattern, new update feature,
+ID-based CRUD, schema migration, string resources, and 31 passing JUnit
+tests. Gap: manual emulator test results and timing averages have not
+yet been recorded.</th>
+</tr>
+<tr class="odd">
+<th>5. Security mindset</th>
+<th>Met</th>
+<th>Salted PBKDF2 password hashing with constant-time comparison, masked
+password field, input validation, database constraints, parameterized
+queries throughout, and a generic login error that does not reveal which
+accounts exist.</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table></div>
+<p>My original plan included separate enhancements for the algorithms
+and data structures and databases categories in later milestones. I did
+not complete those milestones, so this artifact and its Milestone Two
+enhancement are the evidence for all three categories in my final
+ePortfolio. After discussing the code review requirement with my
+instructor, I also proceeded without recording the code review video,
+which is why the collaboration outcome is only partially met.</p>
+<h3 id="ai-use-acknowledgment">6. AI Use Acknowledgment</h3>
+<p>I used generative AI tools (ChatGPT and Claude) extensively during
+this enhancement: to interpret the assignment requirements, review my
+original code for weaknesses, write much of the enhanced code and unit
+tests, and draft this narrative. I used Claude to revise this narrative
+for the final ePortfolio. I reviewed the changes and the explanations in
+this narrative, and I am responsible for the final submission.</p>
+
+</div>
+
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

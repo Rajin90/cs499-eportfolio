@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Design and Engineering | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html">Artifact</a></li><li><a href="software-design.html" aria-current="page">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html">Databases</a></li><li><a href="outcomes.html">Outcomes</a></li><li><a href="code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+
+<p class="eyebrow">Enhancement category 1</p>
+<h1>Software Design and Engineering</h1>
+<p class="lede">Restructuring two all-in-one screens into a layered, testable design, and adding the features an inventory app needs.</p>
+
+<h2>What changed</h2>
+<p>In the original, each activity read input, built display strings, ran SQL, and read database cursors. I separated those responsibilities so each class has one job, which makes the code easier to read, change, and test.</p>
+<pre class="code" tabindex="0"><code class="language-text">MainActivity ──────┐                         ┌── ValidationUtils (input rules, pure Java)
+                   ├── uses ─────────────────┤
+InventoryActivity ─┘                         ├── DatabaseHelper (all SQL, migration, timing)
+       │                                     │        └── PasswordHasher (salt + PBKDF2)
+       └── InventoryAdapter ── shows ──&gt; InventoryItem (id, name, quantity)</code></pre>
+<ul>
+<li><strong>UI layer:</strong> <code>MainActivity</code>, <code>InventoryActivity</code>, <code>InventoryAdapter</code>. No SQL and no cursors.</li>
+<li><strong>Logic layer:</strong> <code>ValidationUtils</code>, <code>PasswordHasher</code>. No Android dependencies, so they run in plain JUnit tests.</li>
+<li><strong>Data layer:</strong> <code>DatabaseHelper</code> returns <code>InventoryItem</code> objects and simple results.</li>
+</ul>
+
+<h2>Before and after: adding an item</h2>
+<p>The original passed raw text straight to <code>Integer.parseInt</code>, so an empty quantity crashed the app. The enhanced version validates first, shows the error on the field, and confirms the save.</p>
+<div class="compare">
+<figure><figcaption><span class="tag before">Before</span> InventoryActivity (original)</figcaption><pre class="code" tabindex="0"><code class="language-java">addBtn.setOnClickListener(v -&gt; {
+    String name = itemName.getText().toString();
+    int qty = Integer.parseInt(itemQty.getText().toString());
+
+    db.insertItem(name, qty);
+    loadData();
+});</code></pre></figure>
+<figure><figcaption><span class="tag after">After</span> InventoryActivity.addItem (enhanced)</figcaption><pre class="code" tabindex="0"><code class="language-java">private void addItem() {
+    String name = itemNameInput.getText().toString();
+    String qtyText = itemQtyInput.getText().toString();
+
+    if (!isValid(itemNameInput, name, itemQtyInput, qtyText)) {
+        return;
+    }
+
+    long newId = db.addItem(name, ValidationUtils.parseQuantity(qtyText));
+    if (newId == -1) {
+        toast(R.string.error_saving_item);
+        return;
+    }
+    itemNameInput.setText(&quot;&quot;);
+    itemQtyInput.setText(&quot;&quot;);
+    itemNameInput.requestFocus();
+    toast(R.string.item_added);
+    loadItems();
+    }</code></pre></figure>
+</div>
+
+<h2>New functionality</h2>
+<ul>
+<li><strong>Edit an item:</strong> tap an item to open a dialog prefilled with its name and quantity. The dialog stays open with an error if the input is invalid.</li>
+<li><strong>Safer delete:</strong> long-press asks for confirmation first.</li>
+<li><strong>Clearer screens:</strong> on-screen instructions, an empty-list message, and an "out of stock" label for zero quantities.</li>
+<li><strong>Maintainability:</strong> all user-facing text moved into <code>strings.xml</code>; every cursor is closed.</li>
+</ul>
+
+<h2>Testing</h2>
+<p>I replaced the empty template test with <strong>31 JUnit tests</strong> in <a href="code/enhanced-ValidationUtilsTest-java.html">ValidationUtilsTest</a> and <a href="code/enhanced-PasswordHasherTest-java.html">PasswordHasherTest</a>. All 31 pass with JUnit 4.13.2. The <a href="enhancement-notes.html">enhancement notes</a> also include 18 manual emulator test cases; their results have not yet been recorded, so they are not reported as passed.</p>
+
+<h2>Skills demonstrated</h2>
+<ul>
+<li>Separation of concerns and the model and adapter pattern in Android</li>
+<li>Refactoring working code without losing behavior or data</li>
+<li>Designing for testability and writing automated unit tests</li>
+<li>Responding to instructor feedback with an architecture diagram, pseudocode, and a documented test plan</li>
+</ul>
+<p>Next: <a href="algorithms.html">Algorithms and Data Structures</a></p>
+
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Review | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html">Artifact</a></li><li><a href="software-design.html">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html">Databases</a></li><li><a href="outcomes.html">Outcomes</a></li><li><a href="code-review.html" aria-current="page">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+
+<p class="eyebrow">Code review</p>
+<h1>Code Review</h1>
+<div class="note warn"><strong>The code review video was not recorded.</strong> The informal code review video is a required component of the CS 499 ePortfolio. After discussing this requirement with my instructor, I decided to proceed without the recording. This page does not substitute for the video.</div>
+<p>The written analysis below is supporting documentation from my <a href="enhancement-notes.html">enhancement notes</a>, not the code review itself. It lists the problems I found when reviewing the original CS 360 code, which guided the enhancements shown on the three category pages.</p>
+<h2>Problems found in the original code</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Original behavior</th>
+<th>Why it is a problem</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><code>Integer.parseInt(itemQty...)</code> with no checks</td>
+<td>An empty or non-numeric quantity crashed the app
+(<code>NumberFormatException</code>)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Empty item names, usernames, and passwords were accepted</td>
+<td>Bad data reached the database</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Delete used <code>db.deleteItem(position + 1)</code></td>
+<td>List position is not the database ID. After any delete, IDs have
+gaps, so the wrong item (or nothing) was deleted</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>No way to edit an item</td>
+<td>Inventory apps need updates, not just add/delete</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Items were stored in the list as display strings</td>
+<td>The database ID was thrown away, which is what caused problem 3</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Passwords stored and compared as plain text</td>
+<td>Anyone with the database file could read every password</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>Password field was not masked</td>
+<td>Password visible on screen</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>Duplicate usernames allowed; failed registration just said
+"Error"</td>
+<td>Confusing for users; login could match the wrong account</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Cursors were never closed</td>
+<td>Resource leak</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><code>onUpgrade</code> was empty</td>
+<td>Any schema change would break existing installs</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>Activities contained SQL/cursor logic and hard-coded text</td>
+<td>Hard to maintain and test</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>Only the template unit test existed</td>
+<td>No evidence the logic works</td>
+</tr>
+</tbody>
+</table></div>
+
+<p>Each problem is addressed in the enhanced version: see <a href="software-design.html">Software Design</a>, <a href="algorithms.html">Algorithms</a>, and <a href="databases.html">Databases</a>.</p>
+
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Databases | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html">Artifact</a></li><li><a href="software-design.html">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html" aria-current="page">Databases</a></li><li><a href="outcomes.html">Outcomes</a></li><li><a href="code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+
+<p class="eyebrow">Enhancement category 3</p>
+<h1>Databases</h1>
+<p class="lede">Moving the SQLite schema to a constrained version 2, migrating existing data safely, and keeping all SQL in one parameterized data layer.</p>
+
+<h2>Schema: version 1 and version 2</h2>
+<div class="compare">
+<figure><figcaption><span class="tag before">Before</span> DatabaseHelper.onCreate (version 1)</figcaption><pre class="code" tabindex="0"><code class="language-sql">public void onCreate(SQLiteDatabase db) {
+    db.execSQL(&quot;CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)&quot;);
+    db.execSQL(&quot;CREATE TABLE items (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, quantity INTEGER)&quot;);
+}</code></pre></figure>
+<figure><figcaption><span class="tag after">After</span> Schema version 2 (SQL)</figcaption><pre class="code" tabindex="0"><code class="language-sql">CREATE TABLE users (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  username      TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  password_hash TEXT NOT NULL,
+  salt          TEXT NOT NULL
+);
+CREATE TABLE items (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  name     TEXT NOT NULL,
+  quantity INTEGER NOT NULL CHECK (quantity &gt;= 0)
+);
+CREATE INDEX idx_items_name ON items (name COLLATE NOCASE);</code></pre></figure>
+</div>
+<ul>
+<li><strong>Constraints in the database itself:</strong> required usernames that are unique regardless of case, required item names, and <code>CHECK (quantity &gt;= 0)</code>. Invalid data is rejected even if a future screen forgets to validate it.</li>
+<li><strong>No plain-text passwords:</strong> only <code>password_hash</code> and <code>salt</code> are stored.</li>
+<li><strong>Index:</strong> <code>idx_items_name</code> uses the same case-insensitive collation as the item list's <code>ORDER BY</code>.</li>
+</ul>
+
+<h2>Migration from version 1</h2>
+<p>The original <code>onUpgrade</code> was empty, so any schema change would have left existing installs on the old tables. The enhanced version migrates existing data inside the upgrade transaction.</p>
+<div class="compare">
+<figure><figcaption><span class="tag before">Before</span> DatabaseHelper.onUpgrade (original)</figcaption><pre class="code" tabindex="0"><code class="language-java">public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+}</code></pre></figure>
+<figure><figcaption><span class="tag after">After</span> DatabaseHelper.migrateItemsToV2 (enhanced)</figcaption><pre class="code" tabindex="0"><code class="language-java">private void migrateItemsToV2(SQLiteDatabase db) {
+    db.execSQL(&quot;ALTER TABLE items RENAME TO items_v1&quot;);
+    db.execSQL(CREATE_ITEMS_V2);
+    // Keep the original IDs; repair rows that would break the new constraints
+    db.execSQL(&quot;INSERT INTO items (id, name, quantity) &quot;
+            + &quot;SELECT id, &quot;
+            + &quot;COALESCE(NULLIF(TRIM(name), &#x27;&#x27;), &#x27;Unnamed item&#x27;), &quot;
+            + &quot;MAX(COALESCE(quantity, 0), 0) &quot;
+            + &quot;FROM items_v1&quot;);
+    db.execSQL(&quot;DROP TABLE items_v1&quot;);
+    db.execSQL(CREATE_ITEMS_NAME_INDEX);
+}</code></pre></figure>
+</div>
+<ul>
+<li><strong>Users:</strong> each old password is replaced by a salted hash; blank accounts are dropped; for duplicate usernames, the first account is kept.</li>
+<li><strong>Items:</strong> all rows keep their original IDs; blank names become "Unnamed item"; missing or negative quantities become 0.</li>
+<li><strong>Verified:</strong> the migration SQL was tested against deliberately messy version 1 data (duplicates, blanks, a negative quantity, ID gaps), and the new constraints rejected invalid inserts.</li>
+</ul>
+
+<h2>Data access layer</h2>
+<ul>
+<li>All SQL lives in <a href="code/enhanced-DatabaseHelper-java.html"><code>DatabaseHelper</code></a>; the activities never build queries or read cursors.</li>
+<li>Every query uses parameterized selection arguments (<code>"username = ?"</code>), never string concatenation of user input.</li>
+<li>Every cursor is closed with try-with-resources, fixing the original resource leak.</li>
+<li>Each operation logs its elapsed time to Logcat under <code>CS499_DB_PERF</code>, added in response to Module One feedback. The logging is implemented; measured averages have not yet been recorded.</li>
+</ul>
+
+<h2>Skills demonstrated</h2>
+<ul>
+<li>Relational schema design with integrity constraints and indexing</li>
+<li>Planning and writing a data migration for existing users</li>
+<li>Secure data storage and injection-resistant queries</li>
+<li>Instrumenting database operations so performance can be measured</li>
+</ul>
+<p>Next: <a href="outcomes.html">Program Outcomes</a></p>
+
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

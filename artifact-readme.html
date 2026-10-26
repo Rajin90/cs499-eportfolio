@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Artifact README | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html" aria-current="page">Artifact</a></li><li><a href="software-design.html">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html">Databases</a></li><li><a href="outcomes.html">Outcomes</a></li><li><a href="code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="artifact.html">Artifact</a> / Documentation</p>
+<h1 id="cs-499-milestone-two--software-design-and-engineering">CS 499
+Milestone Two – Software Design and Engineering</h1>
+<p><strong>Rajin Ahmed</strong> · Artifact: CS 360 Inventory Management
+Application (Android / Java / SQLite)</p>
+<h2 id="whats-in-this-zip">What's in this ZIP</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>Folder</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Original/MyDatabaseApp</code></td>
+<td>The CS 360 project as it was before the enhancement. Generated build
+output (<code>build/</code>, <code>.gradle/</code>, <code>.idea/</code>)
+and the machine-specific <code>local.properties</code> were removed; the
+source code is unchanged.</td>
+</tr>
+<tr class="even">
+<td><code>Enhanced/MyDatabaseApp</code></td>
+<td>The enhanced project. Open this folder in Android Studio.</td>
+</tr>
+<tr class="odd">
+<td><code>Documentation/ENHANCEMENT_NOTES.md</code></td>
+<td>Before/after comparison, architecture, database schema, pseudocode,
+test cases, performance measurement plan, and outcome mapping.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="files-changed-or-added-in-the-enhanced-version">Files changed or
+added in the enhanced version</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>File</th>
+<th>Status</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>InventoryItem.java</code></td>
+<td><strong>New</strong></td>
+<td>Model for one inventory row (keeps the real database ID)</td>
+</tr>
+<tr class="even">
+<td><code>InventoryAdapter.java</code></td>
+<td><strong>New</strong></td>
+<td>Displays <code>InventoryItem</code> objects in the list</td>
+</tr>
+<tr class="odd">
+<td><code>ValidationUtils.java</code></td>
+<td><strong>New</strong></td>
+<td>All input rules in one testable class</td>
+</tr>
+<tr class="even">
+<td><code>PasswordHasher.java</code></td>
+<td><strong>New</strong></td>
+<td>Salted PBKDF2 password hashing</td>
+</tr>
+<tr class="odd">
+<td><code>DatabaseHelper.java</code></td>
+<td>Rewritten</td>
+<td>Schema v2 with constraints, v1→v2 migration, update/delete by ID,
+closed cursors, timing logs</td>
+</tr>
+<tr class="even">
+<td><code>InventoryActivity.java</code></td>
+<td>Rewritten</td>
+<td>Validation, edit dialog, delete confirmation, empty state</td>
+</tr>
+<tr class="odd">
+<td><code>MainActivity.java</code></td>
+<td>Rewritten</td>
+<td>Validation, duplicate-username handling, hashed login</td>
+</tr>
+<tr class="even">
+<td><code>activity_main.xml</code>,
+<code>activity_inventory.xml</code></td>
+<td>Updated</td>
+<td>Masked password field, titles, instructions, empty-list message</td>
+</tr>
+<tr class="odd">
+<td><code>dialog_edit_item.xml</code></td>
+<td><strong>New</strong></td>
+<td>Layout for the edit dialog</td>
+</tr>
+<tr class="even">
+<td><code>strings.xml</code></td>
+<td>Updated</td>
+<td>All user-facing text moved to resources</td>
+</tr>
+<tr class="odd">
+<td><code>app/build.gradle.kts</code></td>
+<td>Updated</td>
+<td><code>minSdk</code> 24 → 26 (needed for PBKDF2WithHmacSHA256 and
+<code>java.util.Base64</code>), version 2.0</td>
+</tr>
+<tr class="even">
+<td><code>ValidationUtilsTest.java</code>,
+<code>PasswordHasherTest.java</code></td>
+<td><strong>New</strong></td>
+<td>31 JUnit tests (replace the template
+<code>ExampleUnitTest</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="how-to-run">How to run</h2>
+<ol type="1">
+<li>Android Studio → <strong>File → Open</strong> → select
+<code>Enhanced/MyDatabaseApp</code>. Let Gradle sync.</li>
+<li>Run on an emulator (Android 8.0 / API 26 or newer).</li>
+<li>Unit tests: right-click <code>app/src/test</code> → <strong>Run
+Tests</strong>, or run <code>gradlew test</code>.</li>
+<li>Performance timings: open <strong>Logcat</strong> and filter by the
+tag <code>CS499_DB_PERF</code>.</li>
+</ol>
+<p>If the emulator still has the old version of the app installed, the
+new version upgrades its database automatically (version 1 → 2) and
+keeps the existing items and accounts.</p>
+
+<p><a href="artifact.html">Back to the artifact</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

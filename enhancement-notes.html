@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enhancement Notes | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html" aria-current="page">Artifact</a></li><li><a href="software-design.html">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html">Databases</a></li><li><a href="outcomes.html">Outcomes</a></li><li><a href="code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="artifact.html">Artifact</a> / Documentation</p>
+<h1
+id="enhancement-notes--cs-360-inventory-management-application">Enhancement
+Notes – CS 360 Inventory Management Application</h1>
+<p>CS 499 Milestone Two (Software Design and Engineering) · Rajin
+Ahmed</p>
+<p>These notes answer the Module One feedback, which asked for exact
+architecture changes, performance measurements, the database schema,
+test cases, pseudocode or a flowchart, and a mapping to course
+outcomes.</p>
+<hr />
+<h2 id="1-problems-found-in-the-original-code">1. Problems found in the
+original code</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Original behavior</th>
+<th>Why it is a problem</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><code>Integer.parseInt(itemQty...)</code> with no checks</td>
+<td>An empty or non-numeric quantity crashed the app
+(<code>NumberFormatException</code>)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Empty item names, usernames, and passwords were accepted</td>
+<td>Bad data reached the database</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Delete used <code>db.deleteItem(position + 1)</code></td>
+<td>List position is not the database ID. After any delete, IDs have
+gaps, so the wrong item (or nothing) was deleted</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>No way to edit an item</td>
+<td>Inventory apps need updates, not just add/delete</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Items were stored in the list as display strings</td>
+<td>The database ID was thrown away, which is what caused problem 3</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Passwords stored and compared as plain text</td>
+<td>Anyone with the database file could read every password</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>Password field was not masked</td>
+<td>Password visible on screen</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>Duplicate usernames allowed; failed registration just said
+"Error"</td>
+<td>Confusing for users; login could match the wrong account</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Cursors were never closed</td>
+<td>Resource leak</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><code>onUpgrade</code> was empty</td>
+<td>Any schema change would break existing installs</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>Activities contained SQL/cursor logic and hard-coded text</td>
+<td>Hard to maintain and test</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>Only the template unit test existed</td>
+<td>No evidence the logic works</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-architecture-changes">2. Architecture changes</h2>
+<p><strong>Before:</strong> two activities did everything: read input,
+build display strings, call the database, and read cursors.</p>
+<p><strong>After:</strong> each class has one job.</p>
+<pre class="code" tabindex="0"><code> MainActivity ─────┐                         ┌── ValidationUtils (input rules, pure Java)
+                   ├── uses ─────────────────┤
+ InventoryActivity ┘                         ├── DatabaseHelper (all SQL, migration, timing)
+        │                                    │        └── PasswordHasher (salt + PBKDF2)
+        └── InventoryAdapter ── shows ──&gt; InventoryItem (id, name, quantity)</code></pre>
+<ul>
+<li><strong>UI layer:</strong> <code>MainActivity</code>,
+<code>InventoryActivity</code>, <code>InventoryAdapter</code>. No SQL,
+no cursors.</li>
+<li><strong>Logic layer:</strong> <code>ValidationUtils</code>,
+<code>PasswordHasher</code>. No Android dependencies, so they run in
+plain JUnit tests.</li>
+<li><strong>Data layer:</strong> <code>DatabaseHelper</code> returns
+<code>InventoryItem</code> objects and simple results
+(<code>boolean</code>, <code>long</code>,
+<code>RegisterResult</code>).</li>
+</ul>
+<h2 id="3-database-schema">3. Database schema</h2>
+<h3 id="version-1-original">Version 1 (original)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> users (<span class="kw">id</span> <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT, username TEXT, <span class="kw">password</span> TEXT);</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> items (<span class="kw">id</span> <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT, name TEXT, quantity <span class="dt">INTEGER</span>);</span></code></pre></div>
+<h3 id="version-2-enhanced">Version 2 (enhanced)</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> users (</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span>            <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  username      TEXT <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">UNIQUE</span> COLLATE NOCASE,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  password_hash TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  salt          TEXT <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> items (</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span>       <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  name     TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  quantity <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">CHECK</span> (quantity <span class="op">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">INDEX</span> idx_items_name <span class="kw">ON</span> items (name COLLATE NOCASE);</span></code></pre></div>
+<h3
+id="migration-v1--v2-runs-automatically-in-onupgrade-inside-one-transaction">Migration
+(v1 → v2, runs automatically in <code>onUpgrade</code> inside one
+transaction)</h3>
+<ul>
+<li><strong>users:</strong> each old account is copied with its
+plain-text password replaced by a salted hash. Blank accounts are
+dropped. For duplicate usernames, the first account is kept.</li>
+<li><strong>items:</strong> all rows are copied with their original IDs.
+Blank names become "Unnamed item", and missing or negative quantities
+become 0.</li>
+</ul>
+<p>The migration SQL was tested against SQLite with deliberately messy
+version-1 data (duplicates, blanks, negative quantity, ID gaps), and the
+new constraints rejected invalid inserts.</p>
+<h2 id="4-pseudocode">4. Pseudocode</h2>
+<p><strong>Login / registration</strong></p>
+<pre class="code" tabindex="0"><code>ON Register:
+    error ← validateUsername(username) or validateNewPassword(password)
+    IF error: show error on the field; STOP
+    IF usernameExists(username): show &quot;username taken&quot;; STOP
+    salt ← random 16 bytes
+    store username, PBKDF2(password, salt), salt
+    show &quot;Account created&quot;
+
+ON Login:
+    IF username or password empty: show error; STOP
+    row ← SELECT password_hash, salt WHERE username = ?   (case-insensitive)
+    IF row exists AND PBKDF2(password, row.salt) == row.password_hash:
+        open InventoryActivity
+    ELSE:
+        show &quot;Invalid username or password&quot;   (same message either way)
+    clear password field</code></pre>
+<p><strong>Inventory add / update / delete</strong></p>
+<pre class="code" tabindex="0"><code>ON Add:
+    validate name (required, ≤ 50 chars) and quantity (whole number, 0–100,000)
+    IF invalid: show error on the field; STOP
+    id ← INSERT item
+    IF id = -1: show &quot;could not save&quot;  ELSE: clear fields, reload list
+
+ON Tap item:
+    open edit dialog prefilled with item.name, item.quantity
+    ON Save: validate; IF valid: UPDATE items WHERE id = item.id; reload; close dialog
+             ELSE keep dialog open and show errors
+
+ON Long-press item:
+    ask &quot;Delete &lt;name&gt;?&quot;
+    ON confirm: DELETE FROM items WHERE id = item.id; reload list</code></pre>
+<h2 id="5-test-cases">5. Test cases</h2>
+<p>Unit tests (automated, <code>gradlew test</code>): <strong>31 tests
+in <code>ValidationUtilsTest</code> and
+<code>PasswordHasherTest</code>.</strong> All passed when run with JUnit
+4.13.2.</p>
+<p>Manual tests on the emulator. <strong>Fill in the Result column after
+running them.</strong></p>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>ID</th>
+<th>Steps</th>
+<th>Expected result</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T1</td>
+<td>Register <code>tester1</code> / <code>secure123</code></td>
+<td>"Account created"</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T2</td>
+<td>Register <code>tester1</code> again</td>
+<td>Field error "username is already taken"</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T3</td>
+<td>Register <code>ab</code> / <code>secure123</code></td>
+<td>Username length error</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T4</td>
+<td>Register <code>tester2</code> / <code>password</code></td>
+<td>Password must contain a number</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T5</td>
+<td>Log in <code>tester1</code> / <code>secure123</code></td>
+<td>Inventory screen opens</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T6</td>
+<td>Log in <code>tester1</code> / <code>wrongpass1</code></td>
+<td>"Invalid username or password"</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T7</td>
+<td>Log in <code>TESTER1</code> / <code>secure123</code></td>
+<td>Logs in (usernames are case-insensitive)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T8</td>
+<td>Add with empty name</td>
+<td>Error on name field; nothing saved</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T9</td>
+<td>Add with empty quantity (crashed the original)</td>
+<td>Error on quantity field; no crash</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T10</td>
+<td>Add "Apples", 25</td>
+<td>Item appears, "Item added"</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T11</td>
+<td>Add "Milk", 0</td>
+<td>Shows "Quantity: 0 (out of stock)"</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T12</td>
+<td>Tap "Apples", change to 30, Save</td>
+<td>List shows 30</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T13</td>
+<td>Tap item, clear the name, Save</td>
+<td>Dialog stays open with error</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T14</td>
+<td>Add 3 items, delete the first, then long-press the last and
+delete</td>
+<td>The item you long-pressed is the one removed (the original removed
+the wrong one)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T15</td>
+<td>Long-press, then Cancel</td>
+<td>Nothing deleted</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T16</td>
+<td>Close the app fully and reopen</td>
+<td>Accounts and items are still there</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>T17</td>
+<td>Delete all items</td>
+<td>"No items yet" message shows</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>T18</td>
+<td>Password field while typing</td>
+<td>Characters are masked</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-performance-measurement">6. Performance measurement</h2>
+<p>Every database method logs its elapsed time to Logcat under the tag
+<strong><code>CS499_DB_PERF</code></strong>, for example:</p>
+<pre class="code" tabindex="0"><code>CS499_DB_PERF  addItem took 3.41 ms
+CS499_DB_PERF  getAllItems (12 rows) took 1.07 ms
+CS499_DB_PERF  authenticate took 410.22 ms</code></pre>
+<p><strong>How to record:</strong> run each operation 5 times on the
+emulator and write down the average.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>Operation</th>
+<th>Run 1</th>
+<th>Run 2</th>
+<th>Run 3</th>
+<th>Run 4</th>
+<th>Run 5</th>
+<th>Average (ms)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>addItem</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>getAllItems</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>updateItem</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>deleteItem</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>registerUser</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>authenticate</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Expected trade-off:</strong> <code>registerUser</code> and
+<code>authenticate</code> will be much slower than the item operations
+(hundreds of milliseconds) because PBKDF2 deliberately repeats the hash
+120,000 times. That slowness is what makes stolen hashes expensive to
+crack. It is a security-versus-speed decision, and it is acceptable
+because it happens only once per login. A future improvement would be to
+move hashing off the UI thread.</p>
+<h2 id="7-course-outcome-mapping">7. Course outcome mapping</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>Technical result</th>
+<th>Program outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Layered architecture (model, adapter, validation, data layer);
+update feature; ID-based CRUD; migration path</td>
+<td><em>Demonstrate an ability to use well-founded and innovative
+techniques, skills, and tools in computing practices for the purpose of
+implementing computer solutions that deliver value and accomplish
+industry-specific goals</em></td>
+</tr>
+<tr class="even">
+<td>Salted PBKDF2 hashing, masked password, parameterized queries, input
+validation, database constraints, generic login error</td>
+<td><em>Develop a security mindset that anticipates adversarial exploits
+in software architecture and designs to expose potential
+vulnerabilities, mitigate design flaws, and ensure privacy and enhanced
+security of data and resources</em></td>
+</tr>
+<tr class="odd">
+<td>Commented code, README, these notes, unit tests</td>
+<td><em>Design, develop, and deliver professional-quality oral, written,
+and visual communications…</em> (partial; continued in the
+ePortfolio)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="8-left-for-later-milestones">8. Left for later milestones</h2>
+<ul>
+<li><strong>Databases enhancement (Module Five):</strong> link items to
+the user who owns them (foreign key), add search/filter queries, and add
+low-stock alerts.</li>
+<li>Run password hashing on a background thread.</li>
+</ul>
+
+<p><a href="artifact.html">Back to the artifact</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

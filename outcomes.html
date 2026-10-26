@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Program Outcomes | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="index.html">Self-Assessment</a></li><li><a href="artifact.html">Artifact</a></li><li><a href="software-design.html">Software Design</a></li><li><a href="algorithms.html">Algorithms</a></li><li><a href="databases.html">Databases</a></li><li><a href="outcomes.html" aria-current="page">Outcomes</a></li><li><a href="code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+
+<p class="eyebrow">Program outcomes</p>
+<h1>Outcome Map</h1>
+<p class="lede">Where each of the five Computer Science program outcomes is supported in this portfolio, and where the evidence is incomplete.</p>
+<div class="table-scroll"><table>
+<thead><tr><th scope="col">Program outcome</th><th scope="col">Status</th><th scope="col">Evidence</th><th scope="col">Where to find it</th><th scope="col">Remaining gap</th></tr></thead>
+<tbody><tr><td>Employ strategies for building collaborative environments that enable diverse audiences to support organizational decision making in the field of computer science</td><td><span class="status part">Partially met</span></td><td>Module One instructor feedback incorporated (timing logs, test plan, 31 unit tests); targeted feedback requested on two design trade-offs; README and enhancement notes let another developer run and test the project; explanatory code comments.</td><td><a href="artifact.html">Artifact</a>, <a href="enhancement-notes.html">Enhancement notes</a>, <a href="index.html#self-assessment">Self-assessment</a></td><td>After discussing the requirement with my instructor, I proceeded without recording the code review video, so there is no code-review evidence.</td></tr><tr><td>Design, develop, and deliver professional-quality oral, written, and visual communications that are coherent, technically sound, and appropriately adapted to specific audiences and contexts</td><td><span class="status met">Met (written and visual)</span></td><td>Self-assessment, artifact narrative, README, enhancement notes with architecture diagram, schema, and pseudocode, and this website, each written for a different audience.</td><td><a href="index.html#self-assessment">Self-assessment</a>, <a href="artifact.html">Artifact narrative</a></td><td>Oral communication is not demonstrated because the code review video was not recorded.</td></tr><tr><td>Design and evaluate computing solutions that solve a given problem using algorithmic principles and computer science practices and standards appropriate to its solution, while managing the trade-offs involved in design choices</td><td><span class="status part">Partially met</span></td><td>Data-structure redesign that fixed the delete bug; ordered validation logic; deterministic migration rules; pseudocode; documented PBKDF2 speed-versus-security trade-off; index supporting sorted retrieval.</td><td><a href="algorithms.html">Algorithms and Data Structures</a></td><td>No dedicated algorithm-efficiency enhancement with measured before-and-after results.</td></tr><tr><td>Demonstrate an ability to use well-founded and innovative techniques, skills, and tools in computing practices for the purpose of implementing computer solutions that deliver value and accomplish industry-specific goals</td><td><span class="status met">Met</span></td><td>Layered architecture, model and adapter pattern, edit feature, ID-based CRUD, schema migration, string resources, 31 passing JUnit tests, and Logcat performance instrumentation.</td><td><a href="software-design.html">Software Design</a>, <a href="databases.html">Databases</a></td><td>Manual emulator test results and timing averages have not yet been recorded.</td></tr><tr><td>Develop a security mindset that anticipates adversarial exploits in software architecture and designs to expose potential vulnerabilities, mitigate design flaws, and ensure privacy and enhanced security of data and resources</td><td><span class="status met">Met</span></td><td>Salted PBKDF2 hashing with constant-time comparison, masked password field, input validation, database constraints, parameterized queries throughout, generic login error, and removal of personal data from shared project files.</td><td><a href="algorithms.html">Algorithms</a>, <a href="databases.html">Databases</a>, <a href="index.html#self-assessment">Self-assessment</a></td><td>Password hashing still runs on the UI thread (a performance and usability limitation, not a vulnerability).</td></tr></tbody></table></div>
+
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>
