@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InventoryItem.java (enhanced) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Enhanced source</p>
+<h1>InventoryItem.java <small style="font-weight:400;color:var(--muted)">(enhanced)</small></h1>
+<p class="lede">New model class that keeps each record&#x27;s real database ID.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/InventoryItem.java</code> &middot; 37 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+/**
+ * Model class for one row of the items table.
+ *
+ * CS 499 enhancement: the original app stored each item only as a display
+ * string (&quot;Name - Qty: 5&quot;), so the real database ID was lost after loading.
+ * Keeping the ID with the item lets update and delete target the correct row.
+ */
+public class InventoryItem {
+
+    private final long id;
+    private final String name;
+    private final int quantity;
+
+    public InventoryItem(long id, String name, int quantity) {
+        this.id = id;
+        this.name = name;
+        this.quantity = quantity;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public boolean isOutOfStock() {
+        return quantity == 0;
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

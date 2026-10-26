@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InventoryActivity.java (enhanced) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Enhanced source</p>
+<h1>InventoryActivity.java <small style="font-weight:400;color:var(--muted)">(enhanced)</small></h1>
+<p class="lede">Validated add, edit dialog, delete confirmation, empty state.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/InventoryActivity.java</code> &middot; 162 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.ArrayList;
+
+/**
+ * Inventory screen: add, view, update, and delete items.
+ *
+ * CS 499 enhancements:
+ *  - Input is validated before it reaches the database (no more crash on an
+ *    empty or non-numeric quantity).
+ *  - Tap an item to edit it (new update feature).
+ *  - Long-press asks for confirmation, then deletes by the item&#x27;s real
+ *    database ID instead of &quot;list position + 1&quot;.
+ *  - Shows a message when the inventory is empty.
+ *  - The activity no longer reads Cursors; it works with InventoryItem objects.
+ */
+public class InventoryActivity extends AppCompatActivity {
+
+    private EditText itemNameInput;
+    private EditText itemQtyInput;
+    private DatabaseHelper db;
+    private InventoryAdapter adapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_inventory);
+
+        itemNameInput = findViewById(R.id.itemName);
+        itemQtyInput = findViewById(R.id.itemQty);
+        Button addBtn = findViewById(R.id.addBtn);
+        ListView listView = findViewById(R.id.listView);
+        TextView emptyView = findViewById(R.id.emptyView);
+
+        db = new DatabaseHelper(this);
+        adapter = new InventoryAdapter(this, new ArrayList&lt;&gt;());
+        listView.setAdapter(adapter);
+        listView.setEmptyView(emptyView);
+
+        addBtn.setOnClickListener(v -&gt; addItem());
+
+        listView.setOnItemClickListener((parent, view, position, id) -&gt; {
+            InventoryItem item = adapter.getItem(position);
+            if (item != null) {
+                showEditDialog(item);
+            }
+        });
+
+        listView.setOnItemLongClickListener((parent, view, position, id) -&gt; {
+            InventoryItem item = adapter.getItem(position);
+            if (item != null) {
+                confirmDelete(item);
+            }
+            return true;
+        });
+
+        loadItems();
+    }
+
+    @Override
+    protected void onDestroy() {
+        db.close();
+        super.onDestroy();
+    }
+
+    private void loadItems() {
+        adapter.clear();
+        adapter.addAll(db.getAllItems());
+    }
+
+    private void addItem() {
+        String name = itemNameInput.getText().toString();
+        String qtyText = itemQtyInput.getText().toString();
+
+        if (!isValid(itemNameInput, name, itemQtyInput, qtyText)) {
+            return;
+        }
+
+        long newId = db.addItem(name, ValidationUtils.parseQuantity(qtyText));
+        if (newId == -1) {
+            toast(R.string.error_saving_item);
+            return;
+        }
+        itemNameInput.setText(&quot;&quot;);
+        itemQtyInput.setText(&quot;&quot;);
+        itemNameInput.requestFocus();
+        toast(R.string.item_added);
+        loadItems();
+    }
+
+    private void showEditDialog(InventoryItem item) {
+        View form = getLayoutInflater().inflate(R.layout.dialog_edit_item, null);
+        EditText nameInput = form.findViewById(R.id.editItemName);
+        EditText qtyInput = form.findViewById(R.id.editItemQty);
+        nameInput.setText(item.getName());
+        qtyInput.setText(String.valueOf(item.getQuantity()));
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.edit_item_title)
+                .setView(form)
+                .setPositiveButton(R.string.save, null) // listener set below so we can keep the dialog open on errors
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+
+        dialog.setOnShowListener(d -&gt; dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -&gt; {
+                    String name = nameInput.getText().toString();
+                    String qtyText = qtyInput.getText().toString();
+                    if (!isValid(nameInput, name, qtyInput, qtyText)) {
+                        return;
+                    }
+                    if (db.updateItem(item.getId(), name, ValidationUtils.parseQuantity(qtyText))) {
+                        toast(R.string.item_updated);
+                        loadItems();
+                        dialog.dismiss();
+                    } else {
+                        toast(R.string.error_saving_item);
+                    }
+                }));
+        dialog.show();
+    }
+
+    private void confirmDelete(InventoryItem item) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_item_title)
+                .setMessage(getString(R.string.delete_item_message, item.getName()))
+                .setPositiveButton(R.string.delete, (d, which) -&gt; {
+                    if (db.deleteItem(item.getId())) {
+                        toast(R.string.item_deleted);
+                        loadItems();
+                    } else {
+                        toast(R.string.error_deleting_item);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Shows errors directly on the fields and returns true only if both are valid. */
+    private boolean isValid(EditText nameField, String name, EditText qtyField, String qtyText) {
+        String nameError = ValidationUtils.validateItemName(name);
+        String qtyError = ValidationUtils.validateQuantity(qtyText);
+        nameField.setError(nameError);
+        qtyField.setError(qtyError);
+        return nameError == null &amp;&amp; qtyError == null;
+    }
+
+    private void toast(int messageRes) {
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

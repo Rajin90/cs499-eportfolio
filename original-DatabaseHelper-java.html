@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DatabaseHelper.java (original) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Original source</p>
+<h1>DatabaseHelper.java <small style="font-weight:400;color:var(--muted)">(original)</small></h1>
+<p class="lede">Version 1 schema; plain-text passwords; empty onUpgrade.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/DatabaseHelper.java</code> &middot; 64 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class DatabaseHelper extends SQLiteOpenHelper {
+
+    public static final String DB_NAME = &quot;InventoryDB&quot;;
+
+    public DatabaseHelper(Context context) {
+        super(context, DB_NAME, null, 1);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL(&quot;CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)&quot;);
+        db.execSQL(&quot;CREATE TABLE items (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, quantity INTEGER)&quot;);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    }
+
+    public boolean insertUser(String username, String password) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(&quot;username&quot;, username);
+        cv.put(&quot;password&quot;, password);
+
+        return db.insert(&quot;users&quot;, null, cv) != -1;
+    }
+
+    public boolean checkUser(String username, String password) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                &quot;SELECT * FROM users WHERE username=? AND password=?&quot;,
+                new String[]{username, password}
+        );
+
+        return cursor.getCount() &gt; 0;
+    }
+
+    public boolean insertItem(String name, int quantity) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(&quot;name&quot;, name);
+        cv.put(&quot;quantity&quot;, quantity);
+
+        return db.insert(&quot;items&quot;, null, cv) != -1;
+    }
+
+    public Cursor getItems() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(&quot;SELECT * FROM items&quot;, null);
+    }
+
+    public void deleteItem(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(&quot;items&quot;, &quot;id=?&quot;, new String[]{String.valueOf(id)});
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

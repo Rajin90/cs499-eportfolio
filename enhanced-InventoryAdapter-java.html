@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InventoryAdapter.java (enhanced) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Enhanced source</p>
+<h1>InventoryAdapter.java <small style="font-weight:400;color:var(--muted)">(enhanced)</small></h1>
+<p class="lede">New adapter that displays InventoryItem objects.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/InventoryAdapter.java</code> &middot; 60 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.TextView;
+
+import java.util.List;
+
+/**
+ * Turns InventoryItem objects into list rows.
+ *
+ * CS 499 enhancement: the original activity built display strings itself and
+ * threw away the database ID. Display logic now lives here, and the list
+ * holds real InventoryItem objects, so a tapped row gives back its ID.
+ */
+public class InventoryAdapter extends ArrayAdapter&lt;InventoryItem&gt; {
+
+    private final LayoutInflater inflater;
+
+    public InventoryAdapter(Context context, List&lt;InventoryItem&gt; items) {
+        super(context, 0, items);
+        inflater = LayoutInflater.from(context);
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        View row = convertView;
+        if (row == null) {
+            row = inflater.inflate(android.R.layout.simple_list_item_2, parent, false);
+        }
+
+        InventoryItem item = getItem(position);
+        TextView title = row.findViewById(android.R.id.text1);
+        TextView subtitle = row.findViewById(android.R.id.text2);
+
+        if (item != null) {
+            title.setText(item.getName());
+            if (item.isOutOfStock()) {
+                subtitle.setText(getContext().getString(R.string.out_of_stock));
+            } else {
+                subtitle.setText(getContext().getString(R.string.quantity_format, item.getQuantity()));
+            }
+        }
+        return row;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        InventoryItem item = getItem(position);
+        return item == null ? -1 : item.getId();
+    }
+
+    @Override
+    public boolean hasStableIds() {
+        return true;
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

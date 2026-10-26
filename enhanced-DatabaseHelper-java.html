@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DatabaseHelper.java (enhanced) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Enhanced source</p>
+<h1>DatabaseHelper.java <small style="font-weight:400;color:var(--muted)">(enhanced)</small></h1>
+<p class="lede">Version 2 schema, v1 to v2 migration, ID-based CRUD, timing logs.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/DatabaseHelper.java</code> &middot; 253 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Data-access layer for the app. All SQL lives here; the activities never
+ * build queries or read cursors themselves.
+ *
+ * CS 499 enhancements compared with the original version 1:
+ *  - Schema version 2 adds constraints (NOT NULL, UNIQUE username, quantity &gt;= 0).
+ *  - Passwords are stored as salted PBKDF2 hashes instead of plain text.
+ *  - onUpgrade migrates existing v1 data instead of doing nothing.
+ *  - Added updateItem; deleteItem/updateItem use the real row ID.
+ *  - Every Cursor is closed (try-with-resources).
+ *  - Each operation logs its elapsed time under the CS499_DB_PERF tag so the
+ *    performance can be measured in Logcat.
+ */
+public class DatabaseHelper extends SQLiteOpenHelper {
+
+    public static final String DB_NAME = &quot;InventoryDB&quot;;
+    public static final int DB_VERSION = 2;
+
+    private static final String TAG = &quot;DatabaseHelper&quot;;
+    private static final String PERF_TAG = &quot;CS499_DB_PERF&quot;;
+
+    // Table and column names (avoids typos in repeated string literals)
+    static final String TABLE_USERS = &quot;users&quot;;
+    static final String COL_USER_ID = &quot;id&quot;;
+    static final String COL_USERNAME = &quot;username&quot;;
+    static final String COL_PASSWORD_HASH = &quot;password_hash&quot;;
+    static final String COL_SALT = &quot;salt&quot;;
+
+    static final String TABLE_ITEMS = &quot;items&quot;;
+    static final String COL_ITEM_ID = &quot;id&quot;;
+    static final String COL_ITEM_NAME = &quot;name&quot;;
+    static final String COL_QUANTITY = &quot;quantity&quot;;
+
+    private static final String CREATE_USERS_V2 =
+            &quot;CREATE TABLE &quot; + TABLE_USERS + &quot; (&quot;
+                    + COL_USER_ID + &quot; INTEGER PRIMARY KEY AUTOINCREMENT, &quot;
+                    + COL_USERNAME + &quot; TEXT NOT NULL UNIQUE COLLATE NOCASE, &quot;
+                    + COL_PASSWORD_HASH + &quot; TEXT NOT NULL, &quot;
+                    + COL_SALT + &quot; TEXT NOT NULL)&quot;;
+
+    private static final String CREATE_ITEMS_V2 =
+            &quot;CREATE TABLE &quot; + TABLE_ITEMS + &quot; (&quot;
+                    + COL_ITEM_ID + &quot; INTEGER PRIMARY KEY AUTOINCREMENT, &quot;
+                    + COL_ITEM_NAME + &quot; TEXT NOT NULL, &quot;
+                    + COL_QUANTITY + &quot; INTEGER NOT NULL CHECK (&quot; + COL_QUANTITY + &quot; &gt;= 0))&quot;;
+
+    private static final String CREATE_ITEMS_NAME_INDEX =
+            &quot;CREATE INDEX IF NOT EXISTS idx_items_name ON &quot; + TABLE_ITEMS
+                    + &quot; (&quot; + COL_ITEM_NAME + &quot; COLLATE NOCASE)&quot;;
+
+    public enum RegisterResult { SUCCESS, USERNAME_TAKEN, ERROR }
+
+    public DatabaseHelper(Context context) {
+        super(context, DB_NAME, null, DB_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL(CREATE_USERS_V2);
+        db.execSQL(CREATE_ITEMS_V2);
+        db.execSQL(CREATE_ITEMS_NAME_INDEX);
+    }
+
+    /**
+     * Version 1 -&gt; 2 migration. Android runs onUpgrade inside a transaction,
+     * so if any step fails the whole upgrade is rolled back.
+     */
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion &lt; 2) {
+            migrateUsersToV2(db);
+            migrateItemsToV2(db);
+        }
+    }
+
+    private void migrateUsersToV2(SQLiteDatabase db) {
+        db.execSQL(&quot;ALTER TABLE users RENAME TO users_v1&quot;);
+        db.execSQL(CREATE_USERS_V2);
+
+        try (Cursor cursor = db.rawQuery(
+                &quot;SELECT username, password FROM users_v1 ORDER BY id&quot;, null)) {
+            while (cursor.moveToNext()) {
+                String username = cursor.isNull(0) ? &quot;&quot; : cursor.getString(0).trim();
+                String plainPassword = cursor.isNull(1) ? &quot;&quot; : cursor.getString(1);
+                if (username.isEmpty() || plainPassword.isEmpty()) {
+                    continue; // v1 allowed blank accounts; they cannot be logged into safely
+                }
+                String salt = PasswordHasher.generateSalt();
+                ContentValues cv = new ContentValues();
+                cv.put(COL_USERNAME, username);
+                cv.put(COL_PASSWORD_HASH, PasswordHasher.hash(plainPassword, salt));
+                cv.put(COL_SALT, salt);
+                // v1 allowed duplicate usernames; keep the first, skip the rest
+                db.insertWithOnConflict(TABLE_USERS, null, cv, SQLiteDatabase.CONFLICT_IGNORE);
+            }
+        }
+        db.execSQL(&quot;DROP TABLE users_v1&quot;);
+    }
+
+    private void migrateItemsToV2(SQLiteDatabase db) {
+        db.execSQL(&quot;ALTER TABLE items RENAME TO items_v1&quot;);
+        db.execSQL(CREATE_ITEMS_V2);
+        // Keep the original IDs; repair rows that would break the new constraints
+        db.execSQL(&quot;INSERT INTO items (id, name, quantity) &quot;
+                + &quot;SELECT id, &quot;
+                + &quot;COALESCE(NULLIF(TRIM(name), &#x27;&#x27;), &#x27;Unnamed item&#x27;), &quot;
+                + &quot;MAX(COALESCE(quantity, 0), 0) &quot;
+                + &quot;FROM items_v1&quot;);
+        db.execSQL(&quot;DROP TABLE items_v1&quot;);
+        db.execSQL(CREATE_ITEMS_NAME_INDEX);
+    }
+
+    // ---------------------------------------------------------------- users
+
+    public RegisterResult registerUser(String username, String password) {
+        long start = System.nanoTime();
+        try {
+            if (usernameExists(username)) {
+                return RegisterResult.USERNAME_TAKEN;
+            }
+            String salt = PasswordHasher.generateSalt();
+            ContentValues cv = new ContentValues();
+            cv.put(COL_USERNAME, username.trim());
+            cv.put(COL_PASSWORD_HASH, PasswordHasher.hash(password, salt));
+            cv.put(COL_SALT, salt);
+            long rowId = getWritableDatabase().insert(TABLE_USERS, null, cv);
+            return rowId == -1 ? RegisterResult.ERROR : RegisterResult.SUCCESS;
+        } catch (SQLException e) {
+            Log.e(TAG, &quot;registerUser failed&quot;, e);
+            return RegisterResult.ERROR;
+        } finally {
+            logElapsed(&quot;registerUser&quot;, start);
+        }
+    }
+
+    public boolean usernameExists(String username) {
+        try (Cursor cursor = getReadableDatabase().query(
+                TABLE_USERS,
+                new String[]{COL_USER_ID},
+                COL_USERNAME + &quot; = ?&quot;,
+                new String[]{username.trim()},
+                null, null, null)) {
+            return cursor.moveToFirst();
+        }
+    }
+
+    public boolean authenticate(String username, String password) {
+        long start = System.nanoTime();
+        try (Cursor cursor = getReadableDatabase().query(
+                TABLE_USERS,
+                new String[]{COL_PASSWORD_HASH, COL_SALT},
+                COL_USERNAME + &quot; = ?&quot;,
+                new String[]{username.trim()},
+                null, null, null)) {
+            if (!cursor.moveToFirst()) {
+                return false;
+            }
+            return PasswordHasher.verify(password, cursor.getString(1), cursor.getString(0));
+        } finally {
+            logElapsed(&quot;authenticate&quot;, start);
+        }
+    }
+
+    // ---------------------------------------------------------------- items
+
+    /** @return the new row ID, or -1 if the insert failed */
+    public long addItem(String name, int quantity) {
+        long start = System.nanoTime();
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put(COL_ITEM_NAME, name.trim());
+            cv.put(COL_QUANTITY, quantity);
+            return getWritableDatabase().insert(TABLE_ITEMS, null, cv);
+        } catch (SQLException e) {
+            Log.e(TAG, &quot;addItem failed&quot;, e);
+            return -1;
+        } finally {
+            logElapsed(&quot;addItem&quot;, start);
+        }
+    }
+
+    public List&lt;InventoryItem&gt; getAllItems() {
+        long start = System.nanoTime();
+        List&lt;InventoryItem&gt; items = new ArrayList&lt;&gt;();
+        try (Cursor cursor = getReadableDatabase().query(
+                TABLE_ITEMS,
+                new String[]{COL_ITEM_ID, COL_ITEM_NAME, COL_QUANTITY},
+                null, null, null, null,
+                COL_ITEM_NAME + &quot; COLLATE NOCASE ASC&quot;)) {
+            int idIndex = cursor.getColumnIndexOrThrow(COL_ITEM_ID);
+            int nameIndex = cursor.getColumnIndexOrThrow(COL_ITEM_NAME);
+            int qtyIndex = cursor.getColumnIndexOrThrow(COL_QUANTITY);
+            while (cursor.moveToNext()) {
+                items.add(new InventoryItem(
+                        cursor.getLong(idIndex),
+                        cursor.getString(nameIndex),
+                        cursor.getInt(qtyIndex)));
+            }
+        } finally {
+            logElapsed(&quot;getAllItems (&quot; + items.size() + &quot; rows)&quot;, start);
+        }
+        return items;
+    }
+
+    public boolean updateItem(long id, String name, int quantity) {
+        long start = System.nanoTime();
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put(COL_ITEM_NAME, name.trim());
+            cv.put(COL_QUANTITY, quantity);
+            int rows = getWritableDatabase().update(
+                    TABLE_ITEMS, cv, COL_ITEM_ID + &quot; = ?&quot;, new String[]{String.valueOf(id)});
+            return rows == 1;
+        } catch (SQLException e) {
+            Log.e(TAG, &quot;updateItem failed&quot;, e);
+            return false;
+        } finally {
+            logElapsed(&quot;updateItem&quot;, start);
+        }
+    }
+
+    public boolean deleteItem(long id) {
+        long start = System.nanoTime();
+        try {
+            int rows = getWritableDatabase().delete(
+                    TABLE_ITEMS, COL_ITEM_ID + &quot; = ?&quot;, new String[]{String.valueOf(id)});
+            return rows == 1;
+        } catch (SQLException e) {
+            Log.e(TAG, &quot;deleteItem failed&quot;, e);
+            return false;
+        } finally {
+            logElapsed(&quot;deleteItem&quot;, start);
+        }
+    }
+
+    private static void logElapsed(String operation, long startNanos) {
+        double ms = (System.nanoTime() - startNanos) / 1_000_000.0;
+        Log.d(PERF_TAG, String.format(java.util.Locale.US, &quot;%s took %.2f ms&quot;, operation, ms));
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

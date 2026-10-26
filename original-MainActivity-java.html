@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MainActivity.java (original) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Original source</p>
+<h1>MainActivity.java <small style="font-weight:400;color:var(--muted)">(original)</small></h1>
+<p class="lede">Login and registration screen; SQL called directly from the UI.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/MainActivity.java</code> &middot; 55 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.*;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+
+    EditText username, password;
+    Button loginBtn, registerBtn;
+    DatabaseHelper db;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        username = findViewById(R.id.username);
+        password = findViewById(R.id.password);
+        loginBtn = findViewById(R.id.loginBtn);
+        registerBtn = findViewById(R.id.registerBtn);
+
+        db = new DatabaseHelper(this);
+
+        // REGISTER
+        registerBtn.setOnClickListener(v -&gt; {
+            boolean success = db.insertUser(
+                    username.getText().toString(),
+                    password.getText().toString()
+            );
+
+            if (success) {
+                Toast.makeText(this, &quot;User Registered&quot;, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, &quot;Error&quot;, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // LOGIN
+        loginBtn.setOnClickListener(v -&gt; {
+            boolean valid = db.checkUser(
+                    username.getText().toString(),
+                    password.getText().toString()
+            );
+
+            if (valid) {
+                Toast.makeText(this, &quot;Login Successful&quot;, Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(MainActivity.this, InventoryActivity.class));
+            } else {
+                Toast.makeText(this, &quot;Invalid Login&quot;, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

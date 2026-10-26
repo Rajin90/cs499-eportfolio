@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ValidationUtils.java (enhanced) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Enhanced source</p>
+<h1>ValidationUtils.java <small style="font-weight:400;color:var(--muted)">(enhanced)</small></h1>
+<p class="lede">New: every input rule in one testable class.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/ValidationUtils.java</code> &middot; 103 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+/**
+ * Central place for every input rule in the app.
+ *
+ * CS 499 enhancement: the original activities had no validation at all
+ * (an empty quantity crashed the app with NumberFormatException). Putting the
+ * rules here keeps them out of the UI code and makes them unit-testable on
+ * the JVM, because this class has no Android dependencies.
+ *
+ * Each method returns null when the input is valid, or a user-facing error
+ * message when it is not.
+ */
+public final class ValidationUtils {
+
+    public static final int USERNAME_MIN = 3;
+    public static final int USERNAME_MAX = 20;
+    public static final int PASSWORD_MIN = 8;
+    public static final int ITEM_NAME_MAX = 50;
+    public static final int QUANTITY_MAX = 100_000;
+
+    private ValidationUtils() {
+        // utility class, no instances
+    }
+
+    public static String validateUsername(String username) {
+        String value = username == null ? &quot;&quot; : username.trim();
+        if (value.isEmpty()) {
+            return &quot;Username is required&quot;;
+        }
+        if (value.length() &lt; USERNAME_MIN || value.length() &gt; USERNAME_MAX) {
+            return &quot;Username must be &quot; + USERNAME_MIN + &quot;-&quot; + USERNAME_MAX + &quot; characters&quot;;
+        }
+        if (!value.matches(&quot;[A-Za-z0-9_]+&quot;)) {
+            return &quot;Username can only contain letters, numbers, and underscores&quot;;
+        }
+        return null;
+    }
+
+    /** Used at registration, where the password rules are enforced. */
+    public static String validateNewPassword(String password) {
+        if (password == null || password.isEmpty()) {
+            return &quot;Password is required&quot;;
+        }
+        if (password.length() &lt; PASSWORD_MIN) {
+            return &quot;Password must be at least &quot; + PASSWORD_MIN + &quot; characters&quot;;
+        }
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isLetter(c)) hasLetter = true;
+            if (Character.isDigit(c)) hasDigit = true;
+        }
+        if (!hasLetter || !hasDigit) {
+            return &quot;Password must contain at least one letter and one number&quot;;
+        }
+        return null;
+    }
+
+    /** Used at login, where we only check that something was typed. */
+    public static String validateLoginPassword(String password) {
+        if (password == null || password.isEmpty()) {
+            return &quot;Password is required&quot;;
+        }
+        return null;
+    }
+
+    public static String validateItemName(String name) {
+        String value = name == null ? &quot;&quot; : name.trim();
+        if (value.isEmpty()) {
+            return &quot;Item name is required&quot;;
+        }
+        if (value.length() &gt; ITEM_NAME_MAX) {
+            return &quot;Item name must be &quot; + ITEM_NAME_MAX + &quot; characters or fewer&quot;;
+        }
+        return null;
+    }
+
+    public static String validateQuantity(String quantityText) {
+        String value = quantityText == null ? &quot;&quot; : quantityText.trim();
+        if (value.isEmpty()) {
+            return &quot;Quantity is required&quot;;
+        }
+        int quantity;
+        try {
+            quantity = Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return &quot;Quantity must be a whole number&quot;;
+        }
+        if (quantity &lt; 0) {
+            return &quot;Quantity cannot be negative&quot;;
+        }
+        if (quantity &gt; QUANTITY_MAX) {
+            return &quot;Quantity cannot be more than &quot; + QUANTITY_MAX;
+        }
+        return null;
+    }
+
+    /** Call only after validateQuantity(...) returned null. */
+    public static int parseQuantity(String quantityText) {
+        return Integer.parseInt(quantityText.trim());
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>

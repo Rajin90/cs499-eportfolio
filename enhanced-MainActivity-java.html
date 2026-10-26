@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MainActivity.java (enhanced) | Rajin Ahmed ePortfolio</title>
+<meta name="description" content="CS 499 Computer Science Capstone ePortfolio of Rajin Ahmed, Southern New Hampshire University.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Rajin Ahmed <span>CS 499 ePortfolio</span></a>
+    <nav aria-label="Main"><ul><li><a href="../index.html">Self-Assessment</a></li><li><a href="../artifact.html" aria-current="page">Artifact</a></li><li><a href="../software-design.html">Software Design</a></li><li><a href="../algorithms.html">Algorithms</a></li><li><a href="../databases.html">Databases</a></li><li><a href="../outcomes.html">Outcomes</a></li><li><a href="../code-review.html">Code Review</a></li></ul></nav>
+  </div>
+</header>
+<main id="main" class="wrap">
+<p class="eyebrow"><a href="../artifact.html">Artifact</a> / Enhanced source</p>
+<h1>MainActivity.java <small style="font-weight:400;color:var(--muted)">(enhanced)</small></h1>
+<p class="lede">Validated login and registration; hashed authentication; generic login error.</p>
+<p><code>app/src/main/java/com/example/mydatabaseapp/MainActivity.java</code> &middot; 105 lines</p>
+<pre class="code" tabindex="0"><code class="language-java">package com.example.mydatabaseapp;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+/**
+ * Login and registration screen.
+ *
+ * CS 499 enhancements:
+ *  - Username and password are validated before any database call.
+ *  - Registration reports &quot;username taken&quot; instead of a generic &quot;Error&quot;,
+ *    and the database now rejects duplicate usernames.
+ *  - Passwords are hashed (see PasswordHasher / DatabaseHelper), and the
+ *    password field is masked in the layout.
+ *  - The password field is cleared after a login attempt.
+ */
+public class MainActivity extends AppCompatActivity {
+
+    private EditText usernameInput;
+    private EditText passwordInput;
+    private DatabaseHelper db;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        usernameInput = findViewById(R.id.username);
+        passwordInput = findViewById(R.id.password);
+        Button loginBtn = findViewById(R.id.loginBtn);
+        Button registerBtn = findViewById(R.id.registerBtn);
+
+        db = new DatabaseHelper(this);
+
+        registerBtn.setOnClickListener(v -&gt; register());
+        loginBtn.setOnClickListener(v -&gt; login());
+    }
+
+    @Override
+    protected void onDestroy() {
+        db.close();
+        super.onDestroy();
+    }
+
+    private void register() {
+        String username = usernameInput.getText().toString();
+        String password = passwordInput.getText().toString();
+
+        String usernameError = ValidationUtils.validateUsername(username);
+        String passwordError = ValidationUtils.validateNewPassword(password);
+        usernameInput.setError(usernameError);
+        passwordInput.setError(passwordError);
+        if (usernameError != null || passwordError != null) {
+            return;
+        }
+
+        switch (db.registerUser(username, password)) {
+            case SUCCESS:
+                toast(R.string.user_registered);
+                passwordInput.setText(&quot;&quot;);
+                break;
+            case USERNAME_TAKEN:
+                usernameInput.setError(getString(R.string.username_taken));
+                break;
+            default:
+                toast(R.string.registration_failed);
+                break;
+        }
+    }
+
+    private void login() {
+        String username = usernameInput.getText().toString();
+        String password = passwordInput.getText().toString();
+
+        // At login only check that fields are filled in; the full rules apply at registration
+        String usernameError = username.trim().isEmpty() ? getString(R.string.username_required) : null;
+        String passwordError = ValidationUtils.validateLoginPassword(password);
+        usernameInput.setError(usernameError);
+        passwordInput.setError(passwordError);
+        if (usernameError != null || passwordError != null) {
+            return;
+        }
+
+        boolean valid = db.authenticate(username, password);
+        passwordInput.setText(&quot;&quot;);
+
+        if (valid) {
+            toast(R.string.login_successful);
+            startActivity(new Intent(MainActivity.this, InventoryActivity.class));
+        } else {
+            // Same message for unknown user and wrong password, so the screen
+            // does not reveal which usernames exist
+            toast(R.string.invalid_login);
+        }
+    }
+
+    private void toast(int messageRes) {
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+    }
+}</code></pre>
+<p><a href="../artifact.html#source">Back to all source files</a></p>
+</main>
+<footer class="site-footer"><div class="wrap">
+<p>Rajin Ahmed &middot; B.S. Computer Science, Southern New Hampshire University &middot; CS 499 Computer Science Capstone &middot; October 23, 2026</p>
+<p>Generative AI tools (ChatGPT and Claude) were used in this work, as acknowledged in the self-assessment and artifact narrative. This website was built with assistance from Claude.</p>
+</div></footer>
+</body>
+</html>
